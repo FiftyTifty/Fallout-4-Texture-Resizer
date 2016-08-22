@@ -1,0 +1,32 @@
+Byte @ file offset +18 is always 01
+
+First dimension starts @ file offset +0C. For => 256 res, file offset is +0C & +0D
+
+Second dimension starts @ file offset +10
+
+Mipmap levels @ file offset +1c, consists of just one byte with a decimal value.
+
+
+Bytes are in reverse reading order in hex viewer. Start from beginning of header:
+
+[4]x[4] .dds 			 = 44 44 53 20 7C 00 00 00 07 10 0A 00 [04 00] 00 00 [04 00] 00 00 08 00 00 00 01
+
+[4096]x[4096] .dds = 44 44 53 20 7C 00 00 00 07 10 0A 00 [00 10] 00 00 [00 10] 00 00 00 00 00 01 01
+
+
+Size = In Hex = As read in hex viewer:
+
+1 = 01 = 01
+2 = 02 = 02
+4 = 04 = 04
+16 = 10 = 10
+32 = 20 = 20
+64 = 40 = 40
+128 = 80 = 80
+256 = 100 = 00 01
+512 = 200 = 00 02
+1024 = 400 = 00 04
+2048 = 800 = 00 08
+4096 = 1000 = 00 10
+8192 = 2000 = 00 20
+16384 = 4000 = 00 40
