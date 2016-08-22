@@ -1,0 +1,10 @@
+c:\users\cjwin7main\documents\visual studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\Fallout 4 - Image Resizer.csprojResolveAssemblyReference.cache
+c:\users\cjwin7main\documents\visual studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\WindowsFormsApplication1.formProgramWindow.resources
+c:\users\cjwin7main\documents\visual studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\Fallout 4 - Image Resizer.csproj.GenerateResource.Cache
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\bin\Debug\Fallout 4 - Image Resizer.exe.config
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\bin\Debug\Fallout 4 - Image Resizer.exe
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\bin\Debug\Fallout 4 - Image Resizer.pdb
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\Fallout 4 - Image Resizer.g.resources
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\namespaceFallout4ImageResizer.Properties.Resources.resources
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\Fallout 4 - Image Resizer.exe
+C:\Users\CJWin7Main\Documents\Visual Studio 2013\Projects\WindowsFormsApplication1\WindowsFormsApplication1\obj\Debug\Fallout 4 - Image Resizer.pdb
