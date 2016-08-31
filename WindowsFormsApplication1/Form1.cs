@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Collections;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace WindowsFormsApplication1
 {
@@ -81,6 +82,9 @@ namespace WindowsFormsApplication1
 
         private void checkboxDoResizeAll_CheckedChanged(object sender, EventArgs e)
         {
+
+            //Shitty code as I couldn't figure out why I couldn't add the gui forms to a list variable.
+
             if (checkboxDoResizeAll.Checked)
             {
                 checkboxDoResize01.Checked = true;
@@ -123,6 +127,9 @@ namespace WindowsFormsApplication1
 
         private void checkboxDoUseDestinationDir_CheckedChanged(object sender, EventArgs e)
         {
+            //Redundant function, as I can't be fagged making it so we can overwrite the files in the same directories
+            //that we found them in.
+
             if (checkboxDoUseDestinationDir.Checked)
             {
                 buttonDestinationDir.Visible = true;
@@ -138,6 +145,14 @@ namespace WindowsFormsApplication1
 
         public void DirSearch(string sDir)
         {
+            //Okay, so, we get all subdirectories in a folder via the Directory.GetDirectories() function.
+            //We then get the .dds files present in each subfolder by calling Directory.GetFiles() on each
+            //subdirectory (which we got from Directory.GetDirectories()
+            //
+            //The downside to this approach, is that it won't catch any .dds files in the original folder
+            //as we're checking for .dds files in the SUBDIRECTORIES!
+            //Probably isn't hard to workaround, but, well, don't fix what ain't broken. It works, so I'm good.
+
             try
             {
                 foreach (string strDir in Directory.GetDirectories(sDir))
@@ -150,7 +165,7 @@ namespace WindowsFormsApplication1
                     DirSearch(strDir);
                 }
             }
-            catch (System.Exception excpt)
+            catch (System.Exception excpt) //In case there's an invalid folder kicking about.
             {
                 MessageBox.Show(this, excpt.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
                 Console.WriteLine(excpt.Message);
@@ -159,13 +174,17 @@ namespace WindowsFormsApplication1
 
         public void GetDDSDimensions(string strDDSFilename, out int iSourceDDSx, out int iSourceDDSy)
         {
+            //Pretty simple stuff, aside from the whole "using" thing. Basically, when the function ends @ the } bracket
+            //C# takes care of making sure the file is not retained in memory, and that we don't have a zombie file-reading thing.
+            //So eh. It works, and saves effort. 10/10 points
+
             using (FileStream fsSourceDDS = new FileStream(strDDSFilename, FileMode.Open, FileAccess.Read))
             using (BinaryReader binaryreaderDDS = new BinaryReader(fsSourceDDS))
             {
                 fsSourceDDS.Seek(0x0c, SeekOrigin.Begin);
-                ushort ushortWidth = binaryreaderDDS.ReadUInt16();
-                fsSourceDDS.Seek(0x10, SeekOrigin.Begin);
                 ushort ushortHeight = binaryreaderDDS.ReadUInt16();
+                fsSourceDDS.Seek(0x10, SeekOrigin.Begin);
+                ushort ushortWidth = binaryreaderDDS.ReadUInt16();
 
                 iSourceDDSx = ushortWidth;
                 iSourceDDSy = ushortHeight;
@@ -184,6 +203,8 @@ namespace WindowsFormsApplication1
             Boolean bComboBoxSecond = comboboxToCheckSecond.Text.All(char.IsDigit);
             Boolean bComboBoxThird = comboboxToCheckThird.Text.All(char.IsDigit);
             Boolean bComboBoxFourth = comboboxToCheckFourth.Text.All(char.IsDigit);
+
+            //Check to make sure we actually have text in the drop-down list, and that it's a number.
 
             if (comboboxToCheckFirst.Text.Length > 0
                 && bComboBoxFirst
@@ -208,7 +229,7 @@ namespace WindowsFormsApplication1
         {
             int iWidth = Int32.Parse(strWidth);
             int iHeight = Int32.Parse(strHeight);
-            int iResToCheck = 1;
+            int iResToCheck = 1; // Easier to just set it to 1 to begin with, rather than have the failsafe in an else statement.
 
             if (iWidth > iHeight)
             {
@@ -225,7 +246,9 @@ namespace WindowsFormsApplication1
                 iResToCheck = iHeight;
             }
 
-            if (iResToCheck == 1)
+            // Now that we have set iResToCheck (failsale of a value of 1), we'll check it for the right number of mipmaps.
+
+            if (iResToCheck == 1) // Remember that failsafe? Yah, good times.
             {
                 return "0";
             }
@@ -302,35 +325,91 @@ namespace WindowsFormsApplication1
 
             else
             {
-                return "0";
+                return "0"; // Just in case.
             }
         }
 
-        public void RunTexConv(string strFinalWidth, string strFinalHeight, string strFinalDDS)
+        public bool IsAlphaPresent(string strDDSFileName)
         {
-            Process processTexConv = new Process();
+
+            // Function that always returned false, isn't used and is useless as a result.
+            //Keep it anyway because it's my baby and I don't want to backspace-away my effort.
+
+            using (FileStream fsSourceDDSForAlpha = new FileStream(strDDSFileName, FileMode.Open, FileAccess.Read))
+            using (BinaryReader binaryreaderDDSForAlpha = new BinaryReader(fsSourceDDSForAlpha))
+            {
+                fsSourceDDSForAlpha.Position = 0x50;
+                uint uintDWFlags = binaryreaderDDSForAlpha.ReadUInt32();
+                bool boolIsValueSetInBitfield = (uintDWFlags & 1) == 1;
+
+                if (boolIsValueSetInBitfield)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+        }
+
+        public void RunTexConv(string strFinalWidth, string strFinalHeight, string strFinalDDS, string strSourceDDS)
+        {
+
+           /*
+            string strAlphaArgument;
+            if (IsAlphaPresent(strSourceDDS))
+            {
+                strAlphaArgument = "-pmalpha ";
+                MessageBox.Show(strFinalDDS + " Has an alpha channel!");
+            }
+            else
+            {
+                strAlphaArgument = "";
+                MessageBox.Show(strFinalDDS + " No alpha found.");
+            }
+            */
+
+            Process processTexConv = new Process(); // Since TexConv kills itself, we don't have to do shit in a using{} block.
             processTexConv.StartInfo.FileName = System.IO.Directory.GetCurrentDirectory() + "\\texconv.exe";
+
+            //Sanitize the file path, so we can get the folder of the .dds file.
+            //No idea why Path.GetDirectoryName() throws an exception when there are ""s present.
+            //Probably because they're invalid folder chars? Still shitty on Micro$oft's part.
 
             string strPathOfDDSFile = strFinalDDS.Remove(0, 1);
             strPathOfDDSFile = strPathOfDDSFile.Remove(strPathOfDDSFile.Length - 1);
             strPathOfDDSFile = Path.GetDirectoryName(strPathOfDDSFile);
+
+            //Aaaaand now we add back the quotes to make things nice again.
+
             strPathOfDDSFile = strPathOfDDSFile.Insert(0, "\"");
             strPathOfDDSFile = strPathOfDDSFile.Insert(strPathOfDDSFile.Length, "\"");
+
+            //The glory of not-curt-and-autistic variable names!
+            //Really, if you can't figure out what the below line does...Yikes.
 
             string strMipmapLevels = GetNewMipmapLevels(strFinalWidth, strFinalHeight);
 
             //MessageBox.Show(this, strPathOfDDSFile, "Path for the DDS file");
             //MessageBox.Show(this, strFinalDDS, "DDS Name is");
 
-            string strArguments = "-w " + strFinalWidth + " -h " + strFinalHeight + " -m " + strMipmapLevels + " -o " + strPathOfDDSFile + " " + strFinalDDS;
+            //You know how in a command line, the programs make you add conditions with a - before them?
+            //We're just chucking that all in one big ass string.
+
+            //The "ProcessWindowStyle.Hidden" part makes it so that we aren't bombarded with a bazillion command prompt windows
+            //which would make the pc pretty unusable due to the window focus being tortured.
+
+            string strArguments = "-sepalpha " + "-w " + strFinalWidth + " -h " + strFinalHeight + " -m " + strMipmapLevels + " -o " + strPathOfDDSFile + " " + strFinalDDS;
             processTexConv.StartInfo.Arguments = strArguments;
-            processTexConv.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+            processTexConv.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             //MessageBox.Show(this, strArguments, "String passed is");
             processTexConv.Start();
             processTexConv.WaitForExit();
         }
 
-        public void ProcessDDSDimensions(string strSourceWidth, string strSourceHeight, string strFinalDDS)
+        public void ProcessDDSDimensions(string strSourceWidth, string strSourceHeight, string strFinalDDS, string strSourceDDS)
         {
             strFinalDDS = '\u0022' + strFinalDDS + '\u0022';
 
@@ -342,7 +421,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes01.Text;
                 string strFinalHeight = comboboxDestinationYRes01.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -354,7 +433,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes02.Text;
                 string strFinalHeight = comboboxDestinationYRes02.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -366,7 +445,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes03.Text;
                 string strFinalHeight = comboboxDestinationYRes03.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -378,7 +457,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes04.Text;
                 string strFinalHeight = comboboxDestinationYRes04.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -390,7 +469,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes05.Text;
                 string strFinalHeight = comboboxDestinationYRes05.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -402,7 +481,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes06.Text;
                 string strFinalHeight = comboboxDestinationYRes06.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -414,7 +493,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes07.Text;
                 string strFinalHeight = comboboxDestinationYRes07.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -426,7 +505,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes08.Text;
                 string strFinalHeight = comboboxDestinationYRes08.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -438,7 +517,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes09.Text;
                 string strFinalHeight = comboboxDestinationYRes09.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -450,7 +529,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes10.Text;
                 string strFinalHeight = comboboxDestinationYRes10.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -462,7 +541,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes11.Text;
                 string strFinalHeight = comboboxDestinationYRes11.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -474,7 +553,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes12.Text;
                 string strFinalHeight = comboboxDestinationYRes12.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -486,7 +565,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes13.Text;
                 string strFinalHeight = comboboxDestinationYRes13.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -498,7 +577,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes14.Text;
                 string strFinalHeight = comboboxDestinationYRes14.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
 
@@ -510,7 +589,7 @@ namespace WindowsFormsApplication1
                 string strFinalWidth = comboboxDestinationXRes15.Text;
                 string strFinalHeight = comboboxDestinationYRes15.Text;
 
-                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS);
+                RunTexConv(strFinalWidth, strFinalHeight, strFinalDDS, strSourceDDS);
                 return;
             }
         }
@@ -538,21 +617,25 @@ namespace WindowsFormsApplication1
                 {
                     string strDuplicatedFilePath = listFilePaths[i];
                     strDuplicatedFilePath = strDuplicatedFilePath.Replace(textboxSourceDir.Text, textboxDestinationDir.Text);
+										
                     listDestinationFilePaths.Add(strDuplicatedFilePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(strDuplicatedFilePath));
                     File.Copy(listFilePaths[i], listDestinationFilePaths[i], true);
+										
                     int iSourceDDSWidth;
                     int iSourceDDSHeight;
+										
                     GetDDSDimensions(listDestinationFilePaths[i], out iSourceDDSWidth, out iSourceDDSHeight);
-                    ProcessDDSDimensions(iSourceDDSWidth.ToString(), iSourceDDSHeight.ToString(), listDestinationFilePaths[i]);
+                    ProcessDDSDimensions(iSourceDDSWidth.ToString(), iSourceDDSHeight.ToString(), listDestinationFilePaths[i], listFilePaths[i]);
+                    
                 }
 
-                MessageBox.Show(this, "We/'re done captain, ya can stop touchin' yerself now.");
+                MessageBox.Show(this, "We're done captain, ya can stop touchin' yerself now.");
             }
 
             else
             {
-                MessageBox.Show(this, "Fuckin\' add a destination path ya twonk");
+                MessageBox.Show(this, "Fuckin' add a destination path ya twonk");
             }
 
         }
