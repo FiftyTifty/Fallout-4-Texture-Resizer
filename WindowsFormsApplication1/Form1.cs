@@ -387,7 +387,7 @@ namespace WindowsFormsApplication1
             strPathOfDDSFile = strPathOfDDSFile.Insert(0, "\"");
             strPathOfDDSFile = strPathOfDDSFile.Insert(strPathOfDDSFile.Length, "\"");
 
-            //The glory of not-curt-and-autistic variable names!
+            //The glory of not-curt variable names!
             //Really, if you can't figure out what the below line does...Yikes.
 
             string strMipmapLevels = GetNewMipmapLevels(strFinalWidth, strFinalHeight);
